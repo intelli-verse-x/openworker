@@ -9,6 +9,10 @@ this checks that the engine sends the right events.
 from __future__ import annotations
 
 import asyncio
+import threading
+import time
+
+import pytest
 
 import aisuite as ai
 
@@ -69,13 +73,31 @@ def _drain(gen):
     return asyncio.run(go())
 
 
-def test_a_turn_with_tools_is_recorded(tmp_path):
+@pytest.mark.parametrize("reverse_start", [False, True])
+def test_a_turn_with_tools_is_recorded(tmp_path, monkeypatch, reverse_start):
     (tmp_path / "a.txt").write_text("hello", encoding="utf-8")
     (tmp_path / "b.txt").write_text("world", encoding="utf-8")
     engine, rec, _ = _engine(tmp_path, [
         _tools(("c1", "read_file", {"path": "a.txt"}), ("c2", "read_file", {"path": "b.txt"})),
         _text("done"),
     ])
+    if reverse_start:
+        # Reads run in worker threads: the model lists c1 first, but c2 may start first.
+        # Force that valid schedule to exercise chronology versus model call position.
+        original_execute = engine._execute_sync
+        second_finished = threading.Event()
+
+        def execute_reversed(call):
+            if call.id == "c1":
+                assert second_finished.wait(5), "second concurrent read never completed"
+                time.sleep(0.005)  # distinct millisecond timestamps, not the tie-break case
+            try:
+                return original_execute(call)
+            finally:
+                if call.id == "c2":
+                    second_finished.set()
+
+        monkeypatch.setattr(engine, "_execute_sync", execute_reversed)
     ui = _drain(engine.run("read both", trigger="user"))
     d = rec.as_dict()
 
@@ -90,8 +112,13 @@ def test_a_turn_with_tools_is_recorded(tmp_path):
     assert turn["duration_ms"] is not None
 
     tools = [s for s in d["steps"] if s["kind"] == "tool"]
-    assert [(s["call_id"], s["call_index"], s["status"]) for s in tools] == [
+    # Recording format1.0 orders by actual start time; call_index only breaks a tie.
+    # Validate every model call and status without assuming worker scheduling order.
+    assert sorted((s["call_id"], s["call_index"], s["status"]) for s in tools) == [
         ("c1", 0, "ok"), ("c2", 1, "ok")]
+    assert [s["started_at"] for s in tools] == sorted(s["started_at"] for s in tools)
+    if reverse_start:
+        assert [s["call_id"] for s in tools] == ["c2", "c1"]
     by_call = {m.get("tool_call_id"): m["mid"] for m in engine.messages if m["role"] == "tool"}
     for s in tools:
         assert s["message_id"] == by_call[s["call_id"]]
