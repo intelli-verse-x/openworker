@@ -9,7 +9,7 @@
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
-    "build": "tsc -p tsconfig.json",
+    "build": "node init && tsc -p tsconfig.json",
     "desktop": "npm run build && electron .",
     "web": "npm run build && node web/server.mjs",
     "test": "npm run build && node --test test/*.test.mjs",

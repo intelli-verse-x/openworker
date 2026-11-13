@@ -29,8 +29,9 @@ dist/
 /.sdk-release*/
 
 # Local secrets (live-smoke BYO keys) — never committed
-.env
 .claude/settings.local.json
 
 # Reviewer eval run outputs stay local; the study archive lives in ocw-context (OPE-225).
 /reports/
+config.bat
+node_modules

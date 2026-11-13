@@ -6,8 +6,8 @@
   "scripts": {
     "runtime": "node scripts/runtime.mjs",
     "predev": "npm run runtime",
-    "dev": "tauri dev",
-    "build": "tsc && vite build",
+    "dev": "node init && tauri dev",
+    "build": "node init && tsc && vite build",
     "prepackage": "npm run runtime",
     "package": "tauri build"
   },

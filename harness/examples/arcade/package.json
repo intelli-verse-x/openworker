@@ -11,9 +11,9 @@
   "scripts": {
     "sdk": "npm --prefix ../../typescript-sdk run build",
     "runtime": "node scripts/runtime.mjs",
-    "dev": "node scripts/dev.mjs",
-    "build:main": "node scripts/bundle-libraries.mjs && tsc -p tsconfig.main.json",
-    "build": "npm run sdk && npm run build:main && tsc -p tsconfig.json && vite build",
+    "dev": "node init && node scripts/dev.mjs",
+    "build:main": "node init && node scripts/bundle-libraries.mjs && tsc -p tsconfig.main.json",
+    "build": "node init && npm run sdk && npm run build:main && tsc -p tsconfig.json && vite build",
     "test": "npm run build:main && node --test test/storage.test.mjs test/projection.test.mjs test/projects.test.mjs test/starters.test.mjs test/assets.test.mjs test/game-progress.test.mjs test/asset-catalog.test.mjs test/review.test.mjs test/test-evidence.test.mjs",
     "test:integration": "npm run sdk && npm run build:main && node --test test/integration.test.mjs test/provider-probe.test.mjs test/project-agent.test.mjs test/preview-agent.test.mjs",
     "test:playtest": "npm run build && node test/playtest-ui.mjs && node test/playtest-app-ui.mjs",

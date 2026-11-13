@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "prepare-content": "node scripts/prepare.mjs",
-    "dev": "npm run prepare-content && astro dev",
-    "build": "npm run prepare-content && astro build && pagefind --site dist --root-selector \"[data-pagefind-body]\"",
+    "dev": "node init && npm run prepare-content && astro dev",
+    "build": "node init && npm run prepare-content && astro build && pagefind --site dist --root-selector \"[data-pagefind-body]\"",
     "preview": "astro preview",
     "test": "node --test scripts/*.test.mjs"
   },
